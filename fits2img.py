@@ -32,7 +32,8 @@ def convert(source, destination):
 
 
 parser = argparse.ArgumentParser(
-    description='Converts images in fits format into one of image formats supported by scipy.misc.imsave.')
+    description='Converts images in fits format into one of image formats supported by'
+                'scipy.misc.imsave.')
 parser.add_argument('source',
     help='Source image in .fits format or a directory with images. In case of directory converts '
          'all images inside it.',
@@ -77,15 +78,13 @@ if dirs:
     else:
         dest_dir = dirs[0]
     for d in dirs:
-        dest_filedir = path.join(dest_dir, '/'.join(d.split('/')[1:]))
+        dest_filedir = d.replace(args.source, dest_dir)
         if not path.isdir(dest_filedir):
             os.makedirs(dest_filedir)
         for e in os.scandir(d):
             if e.is_file() and not e.is_symlink() and e.path.endswith('.fits'):
-                dest_filepath = path.join(
-                    dest_filedir,
-                    path.basename(re.sub('\.[^\.]+$', ext, e.path))
-                )
+                newfilename = path.basename(re.sub('\.[^\.]+$', ext, e.path))
+                dest_filepath = path.join(dest_filedir, newfilename)
                 convert(e.path, dest_filepath)
 else:
     if not args.destination:

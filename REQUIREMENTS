@@ -1,0 +1,4 @@
+scikit-learn >= 0.17
+scikit-image >= 0.12
+numpy == 1.*
+networkx == 1.*
