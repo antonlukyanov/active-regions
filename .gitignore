@@ -1,6 +1,10 @@
 .idea/
 .ipynb_checkpoints/
-*/__pycache__/*
 
-# Compiled python modules.
+#
+# Python
+#
+
+*/__pycache__/*
 *.pyc
+*.pickle
