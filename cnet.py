@@ -307,7 +307,7 @@ class CNet:
                 val = math.log(val, log_base)
             vals.append(val)
 
-        plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(11, 2))
         ax = plt.subplot(111)
         ax.set_xlabel('Image index', fontsize=14)
         ax.set_ylabel('Absolute maximum spectra value', fontsize=12)
@@ -343,7 +343,7 @@ class CNet:
 
         gaps = utl.apply_smoothing(gaps, **kwargs)
 
-        plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(11, 2))
         ax = plt.subplot(111)
         ymin = min(gaps)
         ymin = 0 if ymin >= 0 else ymin
@@ -364,7 +364,7 @@ class CNet:
                 val = math.log(val, log_base)
             vals.append(val)
 
-        plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(11, 2))
         ax = plt.subplot(111)
         ax.set_xlim(0, len(self._graphs))
         ax.set_ylim(0, max(vals))
@@ -383,7 +383,7 @@ class CNet:
                 val = math.log(val, log_base)
             vals.append(val)
 
-        plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(11, 2))
         ax = plt.subplot(111)
         ax.set_ylim(0, max(vals))
         ax.set_xlim(0, len(self._graphs))
@@ -410,7 +410,7 @@ class CNet:
                 val = math.log(val, log_base)
             vals.append(val)
 
-        plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(11, 2))
         ax = plt.subplot(111)
         ax.set_xlabel('Image index', fontsize=14)
         ax.set_ylabel('Algebraic connectivity', fontsize=14)
@@ -461,6 +461,7 @@ def search_extrema(img: np.ndarray) -> List[Keypoint]:
             if z != 0 and not visited[y, x]:
                 visited[y, x] = True
                 prev = None
+                cur = None
                 is_extremum = True
                 component = [(y, x)]
 
@@ -572,22 +573,25 @@ def select_level(beta: int, betas: List[int]) -> int:
         elif closest < b < beta:
             closest = b
             idx = i
+    if idx is None:
+        idx = closest
     return idx
 
 
 def cpt_log(filepath: str, scale: int, ss_sigma: float = 1.67) -> List[np.ndarray]:
-    img = rgb2gray(img_as_float(io.imread(filepath)))
+    img = utl.scale_img(utl.read_fits(filepath))
     # Laplacian of gaussians.
     return gaussian(img, sigma=math.sqrt(scale + 1) * ss_sigma, mode='reflect') - \
         gaussian(img, sigma=math.sqrt(scale) * ss_sigma, mode='reflect')
 
 
-def cpt_stable_log(filepath: str, beta: float = None, ss_size: int = 100, ss_sigma: float = 1.67):
+def cpt_stable_log_ndarr(img: np.ndarray, beta: float = None, ss_size: int = 100,
+                         ss_sigma: float = 1.67):
     nb8_elem = [[1, 1, 1],
                 [1, 1, 1],
                 [1, 1, 1]]
 
-    img = rgb2gray(img_as_float(io.imread(filepath)))
+    img = utl.scale_img(img)
     prev_img = gaussian(img, sigma=ss_sigma, mode='reflect')
 
     log = []
@@ -642,6 +646,10 @@ def cpt_stable_log(filepath: str, beta: float = None, ss_size: int = 100, ss_sig
     betas = betas_
 
     return log, components, beta_scales, betas
+
+
+def cpt_stable_log(filepath: str, beta: float = None, ss_size: int = 100, ss_sigma: float = 1.67):
+    return cpt_stable_log_ndarr(utl.read_fits(filepath), beta, ss_size, ss_sigma)
 
 
 def cpt_keypoints(lap: np.ndarray, threshold: float = 0.1, replace_clusters: bool = True)\
@@ -832,7 +840,8 @@ def plot_components(components: List[int]) -> Axes:
 
 
 def plot_betas(beta_scales: List[int], betas: List[int]) -> Axes:
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(10, 3))
+    plt.grid(True)
     ax = plt.subplot(111)
     ax.set_xlabel('$k$', fontsize=14)
     ax.set_ylabel('$\\beta$', fontsize=14)
@@ -852,7 +861,7 @@ def plot_dates(ax: Axes, dates: Dates, flares: Flares, color: str = 'g'):
     ticks = []
     ticklabels = []
 
-    y = ax.get_ylim()[1] * 0.95
+    y = ax.get_ylim()[1] * 0.9
     for date, idxs in dates.items():
         x = max(idxs)
         ticks.append(max(idxs))
@@ -863,7 +872,7 @@ def plot_dates(ax: Axes, dates: Dates, flares: Flares, color: str = 'g'):
                 flpos = min(idxs) + idx - 1
                 flcolor = 'r' if flcl[0] in ['M', 'X'] else '#BD761A'
                 ax.axvline(flpos, color=flcolor, linestyle='dashed')
-                ax.text(flpos - 7, y, flcl, color=flcolor)
+                ax.text(flpos - 9, y, flcl, color=flcolor)
 
     twin = ax.twiny()
     twin.set_xlim(ax.get_xlim())

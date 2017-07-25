@@ -6,6 +6,7 @@ from typing import List, Union, Dict, Tuple
 from os import path
 
 import numpy as np
+import pyfits
 
 
 class Timer:
@@ -22,12 +23,36 @@ class Timer:
 
 def find_images(dirpath: str) -> Tuple[List[str], int]:
     imagepaths = []
-    for e in os.scandir(dirpath + '_png'):
-        if e.is_file() and not e.is_symlink() and e.path.endswith('.png'):
+    for e in os.scandir(dirpath):
+        if e.is_file() and not e.is_symlink() and e.path.endswith('.fits'):
             imagepaths.append(e.path)
     images_num = len(imagepaths)
     print('Found images: %d' % images_num)
     return imagepaths, images_num
+
+
+def read_fits(filepath):
+    data = None
+    with pyfits.open(filepath) as f:
+        for i, hdu in enumerate(f):
+            if hdu.is_image and hdu.header['naxis'] > 0:
+                hdu.verify('silentfix')
+                data = hdu.data
+                break
+    if data is not None:
+        data = np.nan_to_num(data)
+    return data
+
+
+def scale_img(img):
+    """
+    Scales values into [0, 1] range.
+    :param img:
+    :return:
+    """
+    vmin = img.min()
+    vmax = img.max()
+    return (img - vmin) / (vmax - vmin)
 
 
 def parse_flare_class(value: float) -> Union[str, None]:
@@ -90,11 +115,11 @@ def parse_flares(filepath: str) -> Flares:
 def parse_dates(filepaths: List[str]) -> Dict[str, List[int]]:
     dates = {}
     for i, p in enumerate(filepaths):
-        date = re.match('^.+720s\.([0-9]{4})([0-9]{2})([0-9]{2})_.+$', p)
+        date = re.match('^.+720s\.([0-9]{4}\.)?([0-9]{4})([0-9]{2})([0-9]{2})_.+$', p)
         if date:
-            y = date.group(1)
-            m = date.group(2)
-            d = date.group(3)
+            y = date.group(2)
+            m = date.group(3)
+            d = date.group(4)
             date = '%s-%s-%s' % (y, m, d)
             if date not in dates:
                 dates[date] = []
